@@ -23,6 +23,8 @@
     --heads-border: #b8842a;
     --why-bg: #ecf2e6;
     --why-border: #5d7a4f;
+    --cursor-bg: #f0ecf7;
+    --cursor-border: #7655a8;
 
     --serif: "Source Serif Pro", "Source Serif 4", Georgia, "Times New Roman", serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -47,6 +49,8 @@
       --heads-border: #c79a3f;
       --why-bg: #1f2a1c;
       --why-border: #7a9b6c;
+      --cursor-bg: #261f35;
+      --cursor-border: #9c7dcb;
     }
   }
 
@@ -437,6 +441,8 @@
   .callout.heads-up .callout-label { color: var(--heads-border); }
   .callout.why { background: var(--why-bg); border-color: var(--why-border); }
   .callout.why .callout-label { color: var(--why-border); }
+  .callout.cursor { background: var(--cursor-bg); border-color: var(--cursor-border); }
+  .callout.cursor .callout-label { color: var(--cursor-border); }
 
   /* ---------- Prompt block (paste-into-Claude) ---------- */
   .prompt {
@@ -637,7 +643,7 @@
 
     <header class="codelab-header">
       <h2>Start here</h2>
-      <p class="lead">Read this once before your first codelab. It explains the setup pattern, why the launch flags matter, and gives you the <code>CLAUDE.md</code> file to paste into every codelab folder.</p>
+      <p class="lead">Read this once before your first codelab. It explains the setup pattern, why the launch flags matter, gives you the <code>CLAUDE.md</code> file to paste into every codelab folder, walks through what to expect setting up a Mac, and flags the prompts that run long.</p>
     </header>
 
     <section id="setup-pattern">
@@ -749,6 +755,42 @@ This is a learning exercise, not a production project. Pick the path that teache
         <p><code>--dangerously-skip-permissions</code> turns off the prompt that asks before every action Claude takes &mdash; running a command, writing a file, installing something. The name sounds alarming because in some contexts it would be. Here it isn&rsquo;t: you&rsquo;re working in a fresh folder dedicated to this exercise, and the worst case is that you delete the folder and start over. The constant approval prompts would derail the flow and rob you of the <em>let-Claude-drive</em> feeling that is the whole point of these codelabs.</p>
         <p><code>--effort max</code> tells Claude to think as hard as it can on every step. During a learning exercise you want the strongest version of the model, not the cost-saving one.</p>
       </aside>
+    </section>
+
+    <section id="mac-setup">
+      <h3>Mac setup: what to expect</h3>
+      <p>The program&rsquo;s hardware guidance points toward Apple Silicon &mdash; a Mac Mini or MacBook Pro on an M-series chip &mdash; because the unified memory architecture is what makes local model inference (codelab #1) and multi-process agent workloads (codelab #10) workable on a laptop at all. The recommended configuration is <strong>24GB unified memory</strong> (M5 Pro), which unlocks 32B models locally and handles 13B models at a usable speed. 70B is out of reach locally &mdash; that&rsquo;s expected, and codelabs that touch that scale route you to rented cloud compute instead.</p>
+      <p>Here&rsquo;s what a real participant on this exact config actually hit during codelab #1, in the order it happened &mdash; a fair preview of what you&rsquo;ll encounter on your own first run.</p>
+
+      <h4>What actually happened, step by step</h4>
+      <ul>
+        <li><strong>Python inventory came back 3.9.</strong> The first thing codelab #1 does is take inventory &mdash; Python version, disk space, chip. The system Python on the Mac was 3.9. That&rsquo;s fine for codelab #1, which installs its libraries into a virtual environment anyway. But <strong>codelab #6 requires Python 3.10 or newer</strong>, and the framing in that codelab that says &ldquo;Node or Python, either works&rdquo; doesn&rsquo;t account for this. Don&rsquo;t assume your existing Python is new enough &mdash; check before you start codelab #6, and ask Claude to upgrade it via Homebrew or switch you to the Node path if you&rsquo;re below 3.10.</li>
+        <li><strong>Homebrew wasn&rsquo;t on the machine.</strong> Claude walked through installing it. The install itself is quick, but Homebrew prints instructions at the end to add it to your shell&rsquo;s PATH &mdash; an easy step to miss, and the most common reason a freshly-installed tool isn&rsquo;t found by the terminal afterward. Follow those instructions before doing anything else.</li>
+        <li><strong>Ollama installed via Homebrew, then needed its background engine started.</strong> After <code>brew install ollama</code> you&rsquo;ll run <code>ollama serve</code> (or open the app) to start the background process. The model download won&rsquo;t work until the engine is running.</li>
+        <li><strong>The Llama 3.2 3B model download was the longest wait.</strong> This is a real file download &mdash; the quantized 3B model is roughly 2GB. Start it and read ahead in the codelab while it finishes. Once it&rsquo;s down, confirm it works offline: disconnect from Wi-Fi and run a prompt. It will answer.</li>
+        <li><strong>Hugging Face CLI required an account and an access token.</strong> You&rsquo;ll create a free Hugging Face account if you don&rsquo;t have one, generate a read-only access token from the settings page, and run <code>huggingface-cli login</code>. The token is a password-like string &mdash; store it somewhere safe. This step also installs <code>git-lfs</code> as a dependency, which is normal.</li>
+        <li><strong>The <code>.env</code> file pattern shows up here for the first time.</strong> Your OpenRouter API key gets stored in a <code>.env</code> file in the project folder rather than pasted into the script directly. The library <code>python-dotenv</code> reads it at runtime. This pattern repeats throughout the program &mdash; it&rsquo;s how you keep secrets out of code you might share. Never paste an API key directly into a script.</li>
+        <li><strong>Virtual environments (<code>.venv</code>) are how Python dependencies stay contained.</strong> Claude will create a <code>.venv</code> folder in your codelab directory and install everything there, not system-wide. Think of it as a sealed scratch environment just for this project &mdash; nothing spills out to the rest of the machine.</li>
+        <li><strong>Four bugs were found in the codelab itself during this run.</strong> The lesson content has rough edges. That&rsquo;s not a surprise and not a blocker &mdash; when something doesn&rsquo;t work as described, paste the error back into Claude and ask it to diagnose. That recovery loop is itself one of the skills the program is building.</li>
+      </ul>
+
+      <aside class="callout heads-up">
+        <span class="callout-label">Heads up</span>
+        <p>Treat all of the above as one-time setup tax, not a sign the codelab is broken. Paste the exact error into Claude Code and ask it to diagnose &mdash; this is exactly the kind of stuck point the program expects, and it&rsquo;s faster to resolve in conversation than by searching around.</p>
+      </aside>
+    </section>
+
+    <section id="long-prompts">
+      <h3>Prompts that take a while</h3>
+      <p>Most milestones in these codelabs run in 10&ndash;20 minutes, and each one carries a time badge so you know what you&rsquo;re signing up for. A handful of prompts are different in kind, not just length &mdash; they kick off something that runs unattended, sometimes well past the badge on the milestone. Knowing which ones these are ahead of time means you can start them and go do something else, instead of sitting and watching a spinner.</p>
+      <ul>
+        <li><strong>Codelab #1 &mdash; the model download.</strong> Pulling a model from Hugging Face is a real download, not an API call. The quantized Llama 3B is roughly 2GB &mdash; start it and read ahead while it finishes.</li>
+        <li><strong>Codelab #3 &mdash; the full ten-model benchmark run.</strong> Sending the same ten prompts through ten different models, sequentially or in parallel, takes a few minutes of actual wall-clock time &mdash; not because any one call is slow, but because there are a lot of them.</li>
+        <li><strong>Codelab #9 &mdash; the Hermes long-running task.</strong> The point of this milestone is specifically to dispatch a task and walk away (&ldquo;~20 min, mostly away from your laptop&rdquo;). Don&rsquo;t babysit it &mdash; that defeats the exercise. Start it, close the laptop if you want, and come back.</li>
+        <li><strong>Codelab #10 &mdash; the multi-agent pipeline run.</strong> Five subagents working a PRD-to-PR pipeline end to end is the other deliberately-unattended milestone (&ldquo;mostly not at your desk&rdquo;). This is also the one most likely to rack up real API spend while it runs &mdash; check the cost meter before you start and again when you come back.</li>
+        <li><strong>Any large install.</strong> The <code>CLAUDE.md</code> file already tells Claude to pause before installing anything over ~100MB or ~30 seconds, but on a fresh machine even routine installs (a fresh Python environment, an MCP SDK, Node packages) can take longer than expected the first time, since nothing is cached yet.</li>
+      </ul>
+      <p>If a prompt you expected to be quick is clearly running long, that&rsquo;s a legitimate stuck point &mdash; paste what you&rsquo;re seeing back into Claude and ask whether it&rsquo;s expected or whether something&rsquo;s actually hung.</p>
     </section>
 
     <section id="pedagogy">
@@ -1933,6 +1975,11 @@ This is a learning exercise, not a production project. Pick the path that teache
         <li>An <a href="https://openrouter.ai/">OpenRouter</a> account (recommended &mdash; one key, all the models) <em>or</em> a Fireworks account if you already have one from codelab #1. You&rsquo;ll generate one API key during the exercise.</li>
       </ol>
 
+      <aside class="callout cursor">
+        <span class="callout-label">About Cursor</span>
+        <p><strong>Cursor</strong> is a code editor built on top of VS Code with AI capabilities baked directly into the interface &mdash; inline edits, multi-file context, model switching &mdash; rather than bolted on via an extension. You&rsquo;ll use it in this codelab specifically because it makes the <em>harness</em> side of the harness&ndash;model pairing visible and interactive in a way that&rsquo;s easy to observe. Download it free at <a href="https://cursor.com/">cursor.com</a>; the free tier is enough for everything in this exercise. If you already have VS Code, think of Cursor as a drop-in replacement &mdash; it opens the same folders and files.</p>
+      </aside>
+
       <h4>Open Claude Code the right way</h4>
       <p>Same opening as every codelab in this series &mdash; the repetition is the point:</p>
       <ol>
@@ -2518,8 +2565,13 @@ This is a learning exercise, not a production project. Pick the path that teache
       <p>Two things to have in place before you open Claude Code:</p>
       <ol>
         <li><a href="https://claude.com/product/claude-code">Claude Code</a> installed and working.</li>
-        <li>Node.js (v18+) <em>or</em> Python (3.10+) on your machine. Don&rsquo;t worry about picking — Claude will check what you have and use whichever it prefers.</li>
+        <li>Node.js (v18+) <em>or</em> Python (3.10+) on your machine. Don&rsquo;t worry about picking &mdash; Claude will check what you have and use whichever it prefers. <strong>If you&rsquo;re on Mac and haven&rsquo;t checked your Python version yet, do it now</strong> &mdash; the system Python that ships with macOS is often 3.9, which is below the 3.10 minimum. Run <code>python3 --version</code> and ask Claude to upgrade via Homebrew if needed, or take the Node path instead.</li>
       </ol>
+
+      <aside class="callout cursor">
+        <span class="callout-label">Also useful: Cursor</span>
+        <p>If you completed codelab #4 and already have <strong>Cursor</strong> installed, it&rsquo;s a good companion for this exercise. Once your MCP server is wired in, you can connect it to Cursor as well as Claude Code and see the same tools appear in a different harness &mdash; reinforcing the harness&ndash;model separation from that lab. It&rsquo;s not required for the milestones here, but it&rsquo;s a worthwhile five-minute extension if you want it. Cursor is free at <a href="https://cursor.com/">cursor.com</a>.</p>
+      </aside>
 
       <h4>Open Claude Code the right way</h4>
       <p>Same opening as every codelab in this series:</p>
